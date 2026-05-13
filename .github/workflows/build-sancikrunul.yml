@@ -24,7 +24,8 @@ jobs:
         # 1. Mengubah nama kernel utama
         sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul/g' Makefile
         
-        DEFCONFIG="arch/arm64/configs/vendor/vayu-perf_defconfig"
+        # Menggunakan jalur defconfig yang benar sesuai temuan Anda
+        DEFCONFIG="arch/arm64/configs/vayu_defconfig"
         
         if [ -f "$DEFCONFIG" ]; then
           # 2. Identitas Sancikrunul di defconfig
@@ -57,7 +58,7 @@ jobs:
           echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> $DEFCONFIG
           
         else
-          echo "Peringatan: File vayu-perf_defconfig tidak ditemukan."
+          echo "Peringatan: File vayu_defconfig tidak ditemukan."
         fi
 
     - name: Compile Kernel
@@ -66,7 +67,8 @@ jobs:
         export ARCH=arm64
         export SUBARCH=arm64
         
-        make O=out ARCH=arm64 vendor/vayu-perf_defconfig
+        # Perintah make kini menggunakan vayu_defconfig
+        make O=out ARCH=arm64 vayu_defconfig
         
         # Build menggunakan LLVM agar performa maksimal
         make -j$(nproc --all) O=out ARCH=arm64 \
@@ -74,7 +76,7 @@ jobs:
         CROSS_COMPILE=aarch64-linux-gnu- \
         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
         LLVM=1 LLVM_IAS=1
-
+        
     - name: Packaging Sancikrunul ZIP
       run: |
         if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
