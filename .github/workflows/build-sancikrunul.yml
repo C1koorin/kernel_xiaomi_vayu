@@ -17,7 +17,6 @@ jobs:
     - name: Download Toolchain (Proton Clang)
       run: |
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
-        # Perintah download AnyKernel3 osm0sis sudah dihapus dari sini
 
     - name: Integrate KernelSU Next (Legacy)
       run: |
@@ -91,5 +90,5 @@ jobs:
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sancikrunul-Anymore-Smart
-        path: Sancikrunul-Anymore-Smart.zip
+        name: Sancikrunul-HyperOS-Final
+        path: Sancikrunul-HyperOS-Final.zip
