@@ -68,12 +68,23 @@ jobs:
 
     - name: Packaging Sancikrunul ZIP
       run: |
+        # 1. Mengambil Kernel Utama
         if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
           cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/
         elif [ -f out/arch/arm64/boot/Image.gz ]; then
           cp out/arch/arm64/boot/Image.gz AnyKernel/
         else
           cp out/arch/arm64/boot/Image AnyKernel/
+        fi
+        
+        # 2. MENGAMBIL DTBO & DTB (Sangat Krusial untuk Vayu)
+        if [ -f out/arch/arm64/boot/dtbo.img ]; then
+          cp out/arch/arm64/boot/dtbo.img AnyKernel/
+        fi
+        if [ -f out/arch/arm64/boot/dtb.img ]; then
+          cp out/arch/arm64/boot/dtb.img AnyKernel/
+        elif [ -f out/arch/arm64/boot/dts/qcom/vayu.dtb ]; then
+          cp out/arch/arm64/boot/dts/qcom/vayu.dtb AnyKernel/dtb
         fi
         
         cd AnyKernel
