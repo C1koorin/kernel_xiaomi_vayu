@@ -1,4 +1,4 @@
-name: Build Kernel Sancikrunul Anymore (Vayu)
+name: Build Kernel Sancikrunul Final (Vayu)
 on:
   workflow_dispatch:
 
@@ -25,16 +25,14 @@ jobs:
 
     - name: Inject Sancikrunul & Gaming Configs
       run: |
-        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul-Anymore/g' Makefile
+        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul/g' Makefile
         
         DEFCONFIG="arch/arm64/configs/vayu_defconfig"
         
         if [ -f "$DEFCONFIG" ]; then
           sed -i 's/CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Sancikrunul"/g' $DEFCONFIG
           
-          # Catatan: Optimasi Fastcharge dihapus untuk mencegah bootloop di HyperOS
-          
-          # Optimasi Gaming Performance
+          # Optimasi Gaming Performance (Aman untuk MIUI)
           echo "CONFIG_TCP_CONG_BBR=y" >> $DEFCONFIG
           echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> $DEFCONFIG
           echo "CONFIG_IOSCHED_ZEN=y" >> $DEFCONFIG
@@ -66,9 +64,9 @@ jobs:
         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
         LLVM=1 LLVM_IAS=1
 
-    - name: Packaging Sancikrunul ZIP
+    - name: Packaging Sancikrunul ZIP (With DTBO)
       run: |
-        # 1. Mengambil Kernel Utama
+        # Mengambil Kernel Utama
         if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
           cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/
         elif [ -f out/arch/arm64/boot/Image.gz ]; then
@@ -77,7 +75,7 @@ jobs:
           cp out/arch/arm64/boot/Image AnyKernel/
         fi
         
-        # 2. MENGAMBIL DTBO & DTB (Sangat Krusial untuk Vayu)
+        # MENGAMBIL DTBO & DTB (Kunci untuk lolos HyperOS)
         if [ -f out/arch/arm64/boot/dtbo.img ]; then
           cp out/arch/arm64/boot/dtbo.img AnyKernel/
         fi
@@ -90,21 +88,21 @@ jobs:
         cd AnyKernel
         sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+KSUNext)/g' anykernel.sh
         
-        # Penyesuaian AnyKernel3 Khusus HyperOS/MIUI
+        # Penyesuaian Partisi AnyKernel3 untuk Vayu Snapdragon
         sed -i 's/do.devicecheck=1/do.devicecheck=0/g' anykernel.sh
         sed -i 's/device.name1=.*/device.name1=vayu/g' anykernel.sh
         sed -i 's/device.name2=.*/device.name2=bhima/g' anykernel.sh
         sed -i 's|^block=.*|block=/dev/block/bootdevice/by-name/boot;|g' anykernel.sh
         sed -i 's/^is_slot_device=.*/is_slot_device=0;/g' anykernel.sh
         
-        # Mencegah kerusakan ramdisk pada MIUI
+        # Mencegah kerusakan ramdisk pada MIUI/HyperOS
         sed -i 's/do.modules=1/do.modules=0/g' anykernel.sh
         sed -i 's/do.systemless=1/do.systemless=0/g' anykernel.sh
         
-        zip -r9 ../Sancikrunul-Anymore-HyperOS.zip * -x .git README.md *placeholder
+        zip -r9 ../Sancikrunul-Anymore-Final.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sancikrunul-Anymore-HyperOS
-        path: Sancikrunul-Anymore-HyperOS.zip
+        name: Sancikrunul-Anymore-Final
+        path: Sancikrunul-Anymore-Final.zip
