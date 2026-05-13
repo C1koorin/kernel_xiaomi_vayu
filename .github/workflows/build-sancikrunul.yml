@@ -1,4 +1,4 @@
-name: Build Kernel Sancikrunul (Vayu)
+name: Build Kernel Sancikrunul Anymore (Vayu)
 on:
   workflow_dispatch:
 
@@ -19,29 +19,22 @@ jobs:
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
         git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel
 
-    - name: Integrate KernelSU Next (Legacy Branch)
+    - name: Integrate KernelSU Next (Legacy)
       run: |
-        # Mengunduh KernelSU Next khusus branch legacy (untuk kernel lawas 4.14)
         curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
 
-    - name: Inject Sancikrunul, Fastcharge, Gaming & KSU Configs
+    - name: Inject Sancikrunul & Gaming Configs
       run: |
-        # 1. Mengubah nama kernel utama
-        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul-KSUNext/g' Makefile
+        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul-Anymore/g' Makefile
         
         DEFCONFIG="arch/arm64/configs/vayu_defconfig"
         
         if [ -f "$DEFCONFIG" ]; then
-          # 2. Identitas Sancikrunul di defconfig
           sed -i 's/CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Sancikrunul"/g' $DEFCONFIG
           
-          # 3. Optimasi Fastcharge (Dihidupkan kembali)
-          echo "CONFIG_USB_FASTCHARGE=y" >> $DEFCONFIG
-          echo "CONFIG_QPNP_SMB5_FASTCHARGE=y" >> $DEFCONFIG
-          echo "CONFIG_FAST_CHARGE=y" >> $DEFCONFIG
-          echo "CONFIG_POWER_SUPPLY_DEBUG=n" >> $DEFCONFIG
-
-          # 4. Optimasi Gaming Performance
+          # Catatan: Optimasi Fastcharge dihapus untuk mencegah bootloop di HyperOS
+          
+          # Optimasi Gaming Performance
           echo "CONFIG_TCP_CONG_BBR=y" >> $DEFCONFIG
           echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> $DEFCONFIG
           echo "CONFIG_IOSCHED_ZEN=y" >> $DEFCONFIG
@@ -51,13 +44,10 @@ jobs:
           echo "CONFIG_KGSL_DEBUG=n" >> $DEFCONFIG
           echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> $DEFCONFIG
 
-          # ==========================================
-          # 5. SYARAT WAJIB KERNELSU (KPROBES)
-          # ==========================================
+          # Syarat Wajib KSU
           echo "CONFIG_KPROBES=y" >> $DEFCONFIG
           echo "CONFIG_HAVE_KPROBES=y" >> $DEFCONFIG
           echo "CONFIG_KPROBE_EVENTS=y" >> $DEFCONFIG
-          
         else
           echo "Peringatan: File vayu_defconfig tidak ditemukan."
         fi
@@ -87,21 +77,23 @@ jobs:
         fi
         
         cd AnyKernel
-        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+Fastcharge+KSU-Next)/g' anykernel.sh
+        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+KSUNext)/g' anykernel.sh
         
-        # --- PERBAIKAN 1: ERROR UNSUPPORTED DEVICE ---
+        # Penyesuaian AnyKernel3 Khusus HyperOS/MIUI
         sed -i 's/do.devicecheck=1/do.devicecheck=0/g' anykernel.sh
         sed -i 's/device.name1=.*/device.name1=vayu/g' anykernel.sh
         sed -i 's/device.name2=.*/device.name2=bhima/g' anykernel.sh
-        
-        # --- PERBAIKAN 2: ERROR PARTISI MEMORI (BOOT BLOCK) ---
         sed -i 's|^block=.*|block=/dev/block/bootdevice/by-name/boot;|g' anykernel.sh
         sed -i 's/^is_slot_device=.*/is_slot_device=0;/g' anykernel.sh
         
-        zip -r9 ../Sancikrunul-Vayu-KSUNext.zip * -x .git README.md *placeholder
+        # Mencegah kerusakan ramdisk pada MIUI
+        sed -i 's/do.modules=1/do.modules=0/g' anykernel.sh
+        sed -i 's/do.systemless=1/do.systemless=0/g' anykernel.sh
+        
+        zip -r9 ../Sancikrunul-Anymore-HyperOS.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sancikrunul-Vayu-KSUNext-ZIP
-        path: Sancikrunul-Vayu-KSUNext.zip
+        name: Sancikrunul-Anymore-HyperOS
+        path: Sancikrunul-Anymore-HyperOS.zip
