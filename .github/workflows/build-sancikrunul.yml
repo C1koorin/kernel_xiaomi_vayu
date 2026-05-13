@@ -19,29 +19,45 @@ jobs:
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
         git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel
 
-    - name: Inject Sancikrunul & Fastcharge Configs
+    - name: Inject Sancikrunul, Fastcharge & Gaming Configs
       run: |
         # 1. Mengubah nama kernel utama
         sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul/g' Makefile
         
-        # Tentukan lokasi defconfig Vayu
         DEFCONFIG="arch/arm64/configs/vendor/vayu-perf_defconfig"
         
         if [ -f "$DEFCONFIG" ]; then
-          # 2. Memastikan nama lokal Sancikrunul tertulis di defconfig
+          # 2. Identitas Sancikrunul di defconfig
           sed -i 's/CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Sancikrunul"/g' $DEFCONFIG
           
-          # 3. Menyuntikkan modul Fastcharge & Stabilitas Baterai
-          # Jika source AnymoreProject memiliki patch ini, ia akan otomatis aktif.
-          # Jika tidak ada, compiler akan mengabaikannya secara otomatis tanpa menyebabkan error.
+          # 3. Optimasi Fastcharge
           echo "CONFIG_USB_FASTCHARGE=y" >> $DEFCONFIG
           echo "CONFIG_QPNP_SMB5_FASTCHARGE=y" >> $DEFCONFIG
           echo "CONFIG_FAST_CHARGE=y" >> $DEFCONFIG
-          
-          # 4. Mematikan log debugging power supply untuk mengurangi beban CPU saat dicas
           echo "CONFIG_POWER_SUPPLY_DEBUG=n" >> $DEFCONFIG
+
+          # ==========================================
+          # 4. OPTIMASI GAMING PERFORMANCE
+          # ==========================================
+          
+          # a. Algoritma Jaringan TCP BBR (Ping Stabil)
+          echo "CONFIG_TCP_CONG_BBR=y" >> $DEFCONFIG
+          echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> $DEFCONFIG
+          
+          # b. I/O Scheduler untuk Loading Cepat (Zen & Maple)
+          echo "CONFIG_IOSCHED_ZEN=y" >> $DEFCONFIG
+          echo "CONFIG_IOSCHED_MAPLE=y" >> $DEFCONFIG
+          
+          # c. Mematikan Debugging Sistem (Mencegah Stuttering)
+          echo "CONFIG_DEBUG_FS=n" >> $DEFCONFIG
+          echo "CONFIG_DEBUG_KERNEL=n" >> $DEFCONFIG
+          echo "CONFIG_KGSL_DEBUG=n" >> $DEFCONFIG
+          
+          # d. Governor GPU (Responsivitas Grafis)
+          echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> $DEFCONFIG
+          
         else
-          echo "Peringatan: File vayu-perf_defconfig tidak ditemukan di direktori standar."
+          echo "Peringatan: File vayu-perf_defconfig tidak ditemukan."
         fi
 
     - name: Compile Kernel
@@ -52,6 +68,7 @@ jobs:
         
         make O=out ARCH=arm64 vendor/vayu-perf_defconfig
         
+        # Build menggunakan LLVM agar performa maksimal
         make -j$(nproc --all) O=out ARCH=arm64 \
         CC=clang \
         CROSS_COMPILE=aarch64-linux-gnu- \
@@ -69,12 +86,12 @@ jobs:
         fi
         
         cd AnyKernel
-        sed -i 's/kernel.string=.*/kernel.string=Kernel Sancikrunul (Performance & Fastcharge)/g' anykernel.sh
+        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+Fastcharge)/g' anykernel.sh
         
-        zip -r9 ../Sancikrunul-Vayu-Stable.zip * -x .git README.md *placeholder
+        zip -r9 ../Sancikrunul-Vayu-Gaming.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sancikrunul-Vayu-ZIP
-        path: Sancikrunul-Vayu-Stable.zip
+        name: Sancikrunul-Vayu-Gaming-ZIP
+        path: Sancikrunul-Vayu-Gaming.zip
