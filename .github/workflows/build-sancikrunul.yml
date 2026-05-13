@@ -64,9 +64,9 @@ jobs:
         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
         LLVM=1 LLVM_IAS=1
 
-    - name: Packaging Sancikrunul ZIP (Smart Template)
+    - name: Packaging Sancikrunul ZIP (Perfect Template)
       run: |
-        # 1. Memasukkan mesin kernel baru ke dalam folder AnyKernel3
+        # 1. Memasukkan mesin kernel baru ke dalam folder AnyKernel3 bawaan Anymore
         if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
           cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
         elif [ -f out/arch/arm64/boot/Image.gz ]; then
@@ -75,26 +75,18 @@ jobs:
           cp out/arch/arm64/boot/Image AnyKernel3/
         fi
         
-        # 2. Memasukkan dtbo (jika ada) ke dalam folder AnyKernel3
+        # 2. Memasukkan dtbo.img (Kunci utama agar lolos Homescreen HyperOS)
         if [ -f out/arch/arm64/boot/dtbo.img ]; then
           cp out/arch/arm64/boot/dtbo.img AnyKernel3/
         fi
         
-        # 3. Modifikasi Teks anykernel.sh secara paksa
         cd AnyKernel3
         
-        # Ubah Nama
+        # 3. Mengganti nama judul saja, tanpa menyentuh konfigurasi sistem!
         sed -i 's/kernel.string=.*/kernel.string=Sancikrunul/g' anykernel.sh
         
-        # --- PERBAIKAN MUTLAK PARTISI VAYU (SNAPDRAGON) ---
-        sed -i 's/do.devicecheck=1/do.devicecheck=0/g' anykernel.sh
-        sed -i 's|^block=.*|block=/dev/block/bootdevice/by-name/boot;|g' anykernel.sh
-        sed -i 's/^is_slot_device=.*/is_slot_device=0;/g' anykernel.sh
-        sed -i 's/do.modules=1/do.modules=0/g' anykernel.sh
-        sed -i 's/do.systemless=1/do.systemless=0/g' anykernel.sh
-        
         # 4. Membungkus menjadi ZIP siap flash
-        zip -r9 ../Sancikrunul-Anymore-Smart.zip * -x .git README.md *placeholder
+        zip -r9 ../Sancikrunul-HyperOS-Final.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
