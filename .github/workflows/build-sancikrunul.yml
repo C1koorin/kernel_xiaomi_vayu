@@ -1,0 +1,80 @@
+name: Build Kernel Sancikrunul (Vayu)
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Kernel Source
+      uses: actions/checkout@v4
+
+    - name: Setup Build Environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+
+    - name: Download Toolchain & AnyKernel3
+      run: |
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
+        git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel
+
+    - name: Inject Sancikrunul & Fastcharge Configs
+      run: |
+        # 1. Mengubah nama kernel utama
+        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul/g' Makefile
+        
+        # Tentukan lokasi defconfig Vayu
+        DEFCONFIG="arch/arm64/configs/vendor/vayu-perf_defconfig"
+        
+        if [ -f "$DEFCONFIG" ]; then
+          # 2. Memastikan nama lokal Sancikrunul tertulis di defconfig
+          sed -i 's/CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Sancikrunul"/g' $DEFCONFIG
+          
+          # 3. Menyuntikkan modul Fastcharge & Stabilitas Baterai
+          # Jika source AnymoreProject memiliki patch ini, ia akan otomatis aktif.
+          # Jika tidak ada, compiler akan mengabaikannya secara otomatis tanpa menyebabkan error.
+          echo "CONFIG_USB_FASTCHARGE=y" >> $DEFCONFIG
+          echo "CONFIG_QPNP_SMB5_FASTCHARGE=y" >> $DEFCONFIG
+          echo "CONFIG_FAST_CHARGE=y" >> $DEFCONFIG
+          
+          # 4. Mematikan log debugging power supply untuk mengurangi beban CPU saat dicas
+          echo "CONFIG_POWER_SUPPLY_DEBUG=n" >> $DEFCONFIG
+        else
+          echo "Peringatan: File vayu-perf_defconfig tidak ditemukan di direktori standar."
+        fi
+
+    - name: Compile Kernel
+      run: |
+        export PATH="$GITHUB_WORKSPACE/clang/bin:$PATH"
+        export ARCH=arm64
+        export SUBARCH=arm64
+        
+        make O=out ARCH=arm64 vendor/vayu-perf_defconfig
+        
+        make -j$(nproc --all) O=out ARCH=arm64 \
+        CC=clang \
+        CROSS_COMPILE=aarch64-linux-gnu- \
+        CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+        LLVM=1 LLVM_IAS=1
+
+    - name: Packaging Sancikrunul ZIP
+      run: |
+        if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
+          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/
+        elif [ -f out/arch/arm64/boot/Image.gz ]; then
+          cp out/arch/arm64/boot/Image.gz AnyKernel/
+        else
+          cp out/arch/arm64/boot/Image AnyKernel/
+        fi
+        
+        cd AnyKernel
+        sed -i 's/kernel.string=.*/kernel.string=Kernel Sancikrunul (Performance & Fastcharge)/g' anykernel.sh
+        
+        zip -r9 ../Sancikrunul-Vayu-Stable.zip * -x .git README.md *placeholder
+
+    - name: Upload Kernel Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Sancikrunul-Vayu-ZIP
+        path: Sancikrunul-Vayu-Stable.zip
