@@ -66,7 +66,7 @@ jobs:
 
     - name: Packaging Sancikrunul ZIP (Smart Template)
       run: |
-        # 1. Memasukkan mesin kernel baru ke dalam folder AnyKernel3 buatan Anda
+        # 1. Memasukkan mesin kernel baru ke dalam folder AnyKernel3
         if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
           cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
         elif [ -f out/arch/arm64/boot/Image.gz ]; then
@@ -80,9 +80,18 @@ jobs:
           cp out/arch/arm64/boot/dtbo.img AnyKernel3/
         fi
         
-        # 3. Masuk ke folder AnyKernel3 dan ubah nama kernelnya
+        # 3. Modifikasi Teks anykernel.sh secara paksa
         cd AnyKernel3
-        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+KSUNext)/g' anykernel.sh
+        
+        # Ubah Nama
+        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul/g' anykernel.sh
+        
+        # --- PERBAIKAN MUTLAK PARTISI VAYU (SNAPDRAGON) ---
+        sed -i 's/do.devicecheck=1/do.devicecheck=0/g' anykernel.sh
+        sed -i 's|^block=.*|block=/dev/block/bootdevice/by-name/boot;|g' anykernel.sh
+        sed -i 's/^is_slot_device=.*/is_slot_device=0;/g' anykernel.sh
+        sed -i 's/do.modules=1/do.modules=0/g' anykernel.sh
+        sed -i 's/do.systemless=1/do.systemless=0/g' anykernel.sh
         
         # 4. Membungkus menjadi ZIP siap flash
         zip -r9 ../Sancikrunul-Anymore-Smart.zip * -x .git README.md *placeholder
