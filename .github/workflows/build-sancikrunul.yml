@@ -1,4 +1,4 @@
-name: Build Kernel Sancikrunul Final (Vayu)
+name: Build Kernel Sancikrunul (Smart Template)
 on:
   workflow_dispatch:
 
@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-    - name: Checkout Kernel Source
+    - name: Checkout Kernel Source & AnyKernel Template
       uses: actions/checkout@v4
 
     - name: Setup Build Environment
@@ -14,10 +14,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
 
-    - name: Download Toolchain & AnyKernel3
+    - name: Download Toolchain (Proton Clang)
       run: |
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
-        git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel
+        # Perintah download AnyKernel3 osm0sis sudah dihapus dari sini
 
     - name: Integrate KernelSU Next (Legacy)
       run: |
@@ -32,7 +32,7 @@ jobs:
         if [ -f "$DEFCONFIG" ]; then
           sed -i 's/CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Sancikrunul"/g' $DEFCONFIG
           
-          # Optimasi Gaming Performance (Aman untuk MIUI)
+          # Optimasi Gaming Performance
           echo "CONFIG_TCP_CONG_BBR=y" >> $DEFCONFIG
           echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> $DEFCONFIG
           echo "CONFIG_IOSCHED_ZEN=y" >> $DEFCONFIG
@@ -64,45 +64,31 @@ jobs:
         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
         LLVM=1 LLVM_IAS=1
 
-    - name: Packaging Sancikrunul ZIP (With DTBO)
+    - name: Packaging Sancikrunul ZIP (Smart Template)
       run: |
-        # Mengambil Kernel Utama
+        # 1. Memasukkan mesin kernel baru ke dalam folder AnyKernel3 buatan Anda
         if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/
+          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
         elif [ -f out/arch/arm64/boot/Image.gz ]; then
-          cp out/arch/arm64/boot/Image.gz AnyKernel/
+          cp out/arch/arm64/boot/Image.gz AnyKernel3/
         else
-          cp out/arch/arm64/boot/Image AnyKernel/
+          cp out/arch/arm64/boot/Image AnyKernel3/
         fi
         
-        # MENGAMBIL DTBO & DTB (Kunci untuk lolos HyperOS)
+        # 2. Memasukkan dtbo (jika ada) ke dalam folder AnyKernel3
         if [ -f out/arch/arm64/boot/dtbo.img ]; then
-          cp out/arch/arm64/boot/dtbo.img AnyKernel/
-        fi
-        if [ -f out/arch/arm64/boot/dtb.img ]; then
-          cp out/arch/arm64/boot/dtb.img AnyKernel/
-        elif [ -f out/arch/arm64/boot/dts/qcom/vayu.dtb ]; then
-          cp out/arch/arm64/boot/dts/qcom/vayu.dtb AnyKernel/dtb
+          cp out/arch/arm64/boot/dtbo.img AnyKernel3/
         fi
         
-        cd AnyKernel
+        # 3. Masuk ke folder AnyKernel3 dan ubah nama kernelnya
+        cd AnyKernel3
         sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+KSUNext)/g' anykernel.sh
         
-        # Penyesuaian Partisi AnyKernel3 untuk Vayu Snapdragon
-        sed -i 's/do.devicecheck=1/do.devicecheck=0/g' anykernel.sh
-        sed -i 's/device.name1=.*/device.name1=vayu/g' anykernel.sh
-        sed -i 's/device.name2=.*/device.name2=bhima/g' anykernel.sh
-        sed -i 's|^block=.*|block=/dev/block/bootdevice/by-name/boot;|g' anykernel.sh
-        sed -i 's/^is_slot_device=.*/is_slot_device=0;/g' anykernel.sh
-        
-        # Mencegah kerusakan ramdisk pada MIUI/HyperOS
-        sed -i 's/do.modules=1/do.modules=0/g' anykernel.sh
-        sed -i 's/do.systemless=1/do.systemless=0/g' anykernel.sh
-        
-        zip -r9 ../Sancikrunul-Anymore-Final.zip * -x .git README.md *placeholder
+        # 4. Membungkus menjadi ZIP siap flash
+        zip -r9 ../Sancikrunul-Anymore-Smart.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sancikrunul-Anymore-Final
-        path: Sancikrunul-Anymore-Final.zip
+        name: Sancikrunul-Anymore-Smart
+        path: Sancikrunul-Anymore-Smart.zip
