@@ -89,6 +89,14 @@ jobs:
         cd AnyKernel
         sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+Fastcharge+KSU-Next)/g' anykernel.sh
         
+        # --- PERBAIKAN ERROR UNSUPPORTED DEVICE ---
+        # 1. Mematikan pengecekan device (Paling Ampuh)
+        sed -i 's/do.devicecheck=1/do.devicecheck=0/g' anykernel.sh
+        
+        # 2. Mengubah daftar nama device yang didukung menjadi Vayu & Bhima
+        sed -i 's/device.name1=.*/device.name1=vayu/g' anykernel.sh
+        sed -i 's/device.name2=.*/device.name2=bhima/g' anykernel.sh
+        
         zip -r9 ../Sancikrunul-Vayu-KSUNext.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
