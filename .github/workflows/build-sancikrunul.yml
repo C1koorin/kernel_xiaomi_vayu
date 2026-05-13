@@ -19,12 +19,16 @@ jobs:
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
         git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel
 
-    - name: Inject Sancikrunul, Fastcharge & Gaming Configs
+    - name: Integrate KernelSU (Latest)
+      run: |
+        # Mengunduh dan memasang source KernelSU terbaru langsung ke dalam kernel
+        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+
+    - name: Inject Sancikrunul, Fastcharge, Gaming & KSU Configs
       run: |
         # 1. Mengubah nama kernel utama
-        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul/g' Makefile
+        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul-KSU/g' Makefile
         
-        # Menggunakan jalur defconfig yang benar sesuai temuan Anda
         DEFCONFIG="arch/arm64/configs/vayu_defconfig"
         
         if [ -f "$DEFCONFIG" ]; then
@@ -37,25 +41,22 @@ jobs:
           echo "CONFIG_FAST_CHARGE=y" >> $DEFCONFIG
           echo "CONFIG_POWER_SUPPLY_DEBUG=n" >> $DEFCONFIG
 
-          # ==========================================
-          # 4. OPTIMASI GAMING PERFORMANCE
-          # ==========================================
-          
-          # a. Algoritma Jaringan TCP BBR (Ping Stabil)
+          # 4. Optimasi Gaming Performance
           echo "CONFIG_TCP_CONG_BBR=y" >> $DEFCONFIG
           echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> $DEFCONFIG
-          
-          # b. I/O Scheduler untuk Loading Cepat (Zen & Maple)
           echo "CONFIG_IOSCHED_ZEN=y" >> $DEFCONFIG
           echo "CONFIG_IOSCHED_MAPLE=y" >> $DEFCONFIG
-          
-          # c. Mematikan Debugging Sistem (Mencegah Stuttering)
           echo "CONFIG_DEBUG_FS=n" >> $DEFCONFIG
           echo "CONFIG_DEBUG_KERNEL=n" >> $DEFCONFIG
           echo "CONFIG_KGSL_DEBUG=n" >> $DEFCONFIG
-          
-          # d. Governor GPU (Responsivitas Grafis)
           echo "CONFIG_DEVFREQ_GOV_PERFORMANCE=y" >> $DEFCONFIG
+
+          # ==========================================
+          # 5. SYARAT WAJIB KERNELSU (KPROBES)
+          # ==========================================
+          echo "CONFIG_KPROBES=y" >> $DEFCONFIG
+          echo "CONFIG_HAVE_KPROBES=y" >> $DEFCONFIG
+          echo "CONFIG_KPROBE_EVENTS=y" >> $DEFCONFIG
           
         else
           echo "Peringatan: File vayu_defconfig tidak ditemukan."
@@ -67,16 +68,14 @@ jobs:
         export ARCH=arm64
         export SUBARCH=arm64
         
-        # Perintah make kini menggunakan vayu_defconfig
         make O=out ARCH=arm64 vayu_defconfig
         
-        # Build menggunakan LLVM agar performa maksimal
         make -j$(nproc --all) O=out ARCH=arm64 \
         CC=clang \
         CROSS_COMPILE=aarch64-linux-gnu- \
         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
         LLVM=1 LLVM_IAS=1
-        
+
     - name: Packaging Sancikrunul ZIP
       run: |
         if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
@@ -88,12 +87,12 @@ jobs:
         fi
         
         cd AnyKernel
-        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+Fastcharge)/g' anykernel.sh
+        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+Fastcharge+KSU)/g' anykernel.sh
         
-        zip -r9 ../Sancikrunul-Vayu-Gaming.zip * -x .git README.md *placeholder
+        zip -r9 ../Sancikrunul-Vayu-Gaming-KSU.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sancikrunul-Vayu-Gaming-ZIP
-        path: Sancikrunul-Vayu-Gaming.zip
+        name: Sancikrunul-Vayu-Gaming-KSU-ZIP
+        path: Sancikrunul-Vayu-Gaming-KSU.zip
