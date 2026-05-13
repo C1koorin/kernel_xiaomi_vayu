@@ -19,15 +19,15 @@ jobs:
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
         git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel
 
-    - name: Integrate KernelSU (Latest)
+    - name: Integrate KernelSU Next (Legacy Branch)
       run: |
-        # Mengunduh dan memasang source KernelSU terbaru langsung ke dalam kernel
-        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+        # Mengunduh KernelSU Next khusus branch legacy (untuk kernel lawas 4.14)
+        curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
 
     - name: Inject Sancikrunul, Fastcharge, Gaming & KSU Configs
       run: |
         # 1. Mengubah nama kernel utama
-        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul-KSU/g' Makefile
+        sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = -Sancikrunul-KSUNext/g' Makefile
         
         DEFCONFIG="arch/arm64/configs/vayu_defconfig"
         
@@ -35,7 +35,7 @@ jobs:
           # 2. Identitas Sancikrunul di defconfig
           sed -i 's/CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Sancikrunul"/g' $DEFCONFIG
           
-          # 3. Optimasi Fastcharge
+          # 3. Optimasi Fastcharge (Dihidupkan kembali)
           echo "CONFIG_USB_FASTCHARGE=y" >> $DEFCONFIG
           echo "CONFIG_QPNP_SMB5_FASTCHARGE=y" >> $DEFCONFIG
           echo "CONFIG_FAST_CHARGE=y" >> $DEFCONFIG
@@ -87,12 +87,12 @@ jobs:
         fi
         
         cd AnyKernel
-        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+Fastcharge+KSU)/g' anykernel.sh
+        sed -i 's/kernel.string=.*/kernel.string=Sancikrunul (Gaming+Fastcharge+KSU-Next)/g' anykernel.sh
         
-        zip -r9 ../Sancikrunul-Vayu-Gaming-KSU.zip * -x .git README.md *placeholder
+        zip -r9 ../Sancikrunul-Vayu-KSUNext.zip * -x .git README.md *placeholder
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sancikrunul-Vayu-Gaming-KSU-ZIP
-        path: Sancikrunul-Vayu-Gaming-KSU.zip
+        name: Sancikrunul-Vayu-KSUNext-ZIP
+        path: Sancikrunul-Vayu-KSUNext.zip
